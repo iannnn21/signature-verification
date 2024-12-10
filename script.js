@@ -1,22 +1,26 @@
 document.getElementById("uploadForm").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const fileInput = document.getElementById("signatureFile").files[0];
-    if (!fileInput) {
-        alert("Please upload a signature image.");
+
+    const fileInput = document.getElementById("signatureFile");
+    const file = fileInput.files[0];
+
+    if (!file) {
+        alert("Please upload a file!");
         return;
     }
 
     const formData = new FormData();
-    formData.append("file", fileInput);
+    formData.append("file", file);
 
     try {
-        const response = await fetch("https://your-api-url/predict", {
+        const response = await fetch("http://127.0.0.1:5000/predict", {
             method: "POST",
             body: formData,
         });
+
         const data = await response.json();
-        document.getElementById("result").innerText = `Result: ${data.result}`;
+        document.getElementById("result").innerHTML = `<p>Signature is ${data.result}.</p>`;
     } catch (error) {
-        console.error("Error:", error);
+        alert("Error verifying signature.");
     }
 });
