@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
-<head> <link rel="stylesheet" href="style.css">
+<head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Signature Verification</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <h1>Signature Verification System</h1>
     <form id="uploadForm">
-        <label for="signatureFile">Upload Signature:</label>
-        <input type="file" id="signatureFile" accept="image/*">
+        <label for="signatureFile">Upload Signature Image:</label>
+        <input type="file" id="signatureFile" required>
         <button type="submit">Verify</button>
     </form>
-    <p id="result"></p>
-
-    <script src="script.js"></script>
+    <div id="result"></div>
+    <script src="app.js"></script>
 </body>
 </html>
