@@ -1,0 +1,108 @@
+import os
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Input
+
+# Set base directory where your images are stored
+base_dir = '/content/SIGNATURE'
+
+# Create ImageDataGenerator to load images and normalize them
+datagen = ImageDataGenerator(rescale=1./255)
+
+# Load images from the directory and label them as forged (0) or original (1)
+train_generator = datagen.flow_from_directory(
+    base_dir,
+    target_size=(128, 128),
+    batch_size=1,
+    class_mode='binary',
+    classes=['forged', 'original']  # Only include 'forged' and 'original'
+)
+
+print("Classes found:", train_generator.class_indices)
+
+# Build a simple CNN model
+model = Sequential([
+    Input(shape=(128, 128, 3)),  # Input layer
+    Conv2D(32, (3, 3), activation='relu'),  # First convolution layer
+    MaxPooling2D(pool_size=(2, 2)),  # Max pooling layer to downsample
+
+    Conv2D(64, (3, 3), activation='relu'),  # Second convolution layer
+    MaxPooling2D(pool_size=(2, 2)),  # Max pooling layer
+
+    Flatten(),  # Flatten the 2D data to 1D
+    Dense(128, activation='relu'),  # Fully connected layer
+    Dense(1, activation='sigmoid')  # Output layer for binary classification
+])
+
+# Compile the model with optimizer, loss, and metric
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+
+# Train the model on the loaded images
+model.fit(train_generator, epochs=30)  # Adjust epochs as needed
+
+# Function to predict if a signature is original or forged
+def predict_signature(filepath):
+    img = cv2.imread(filepath)  # Read the image
+
+    # Check if the image was loaded correctly
+    if img is None:
+        print(f"Error: Could not read image from {filepath}")
+        return None
+
+    img = cv2.resize(img, (128, 128))  # Resize the image
+    img = np.reshape(img, [1, 128, 128, 3]) / 255.0  # Normalize the image
+    prediction = model.predict(img)  # Predict using the model
+
+    # Return the result: 1 for original, 0 for forged
+    return 1 if prediction > 0.5 else 0  # 1 for original, 0 for forged
+
+# Function to compare specific pairs of signatures
+def compare_signature_pairs():
+    pairs = [
+        ('/content/SIGNATURE/original/original1.jpg', '/content/SIGNATURE/forged/1.jpg'),
+        ('/content/SIGNATURE/original/original1.jpg', '/content/SIGNATURE/forged/2.jpg'),
+        ('/content/SIGNATURE/original/original1.jpg', '/content/SIGNATURE/forged/3.jpg'),
+        ('/content/SIGNATURE/original/original1.jpg', '/content/SIGNATURE/forged/4.jpg'),
+        ('/content/SIGNATURE/original/original1.jpg', '/content/SIGNATURE/forged/5.jpg'),
+        ('/content/SIGNATURE/original/original2.jpg', '/content/SIGNATURE/forged/6.jpg'),
+        ('/content/SIGNATURE/original/original2.jpg', '/content/SIGNATURE/forged/7.jpg'),
+        ('/content/SIGNATURE/original/original2.jpg', '/content/SIGNATURE/forged/8.jpg'),
+        ('/content/SIGNATURE/original/original2.jpg', '/content/SIGNATURE/forged/9.jpg'),
+        ('/content/SIGNATURE/original/original2.jpg', '/content/SIGNATURE/forged/10.jpg'),
+        ('/content/SIGNATURE/original/original3.jpg', '/content/SIGNATURE/forged/11.jpg'),
+        ('/content/SIGNATURE/original/original3.jpg', '/content/SIGNATURE/forged/12.jpg'),
+        ('/content/SIGNATURE/original/original3.jpg', '/content/SIGNATURE/forged/13.jpg'),
+        ('/content/SIGNATURE/original/original3.jpg', '/content/SIGNATURE/forged/14.jpg'),
+        ('/content/SIGNATURE/original/original3.jpg', '/content/SIGNATURE/forged/15.jpg'),
+        ('/content/SIGNATURE/original/original4.jpg', '/content/SIGNATURE/forged/16.jpg'),
+        ('/content/SIGNATURE/original/original4.jpg', '/content/SIGNATURE/forged/17.jpg'),
+        ('/content/SIGNATURE/original/original4.jpg', '/content/SIGNATURE/forged/18.jpg'),
+        ('/content/SIGNATURE/original/original4.jpg', '/content/SIGNATURE/forged/19.jpg'),
+        ('/content/SIGNATURE/original/original4.jpg', '/content/SIGNATURE/forged/20.jpg'),
+        ('/content/SIGNATURE/original/original5.jpg', '/content/SIGNATURE/forged/21.jpg'),
+        ('/content/SIGNATURE/original/original5.jpg', '/content/SIGNATURE/forged/22.jpg'),
+        ('/content/SIGNATURE/original/original5.jpg', '/content/SIGNATURE/forged/23.jpg'),
+        ('/content/SIGNATURE/original/original5.jpg', '/content/SIGNATURE/forged/24.jpg'),
+        ('/content/SIGNATURE/original/original5.jpg', '/content/SIGNATURE/forged/25.jpg')
+    ]
+
+    for idx, (path1, path2) in enumerate(pairs, start=1):
+        result1 = predict_signature(path1)  # Original signature
+        result2 = predict_signature(path2)  # Forged signature
+
+        if result1 is None or result2 is None:
+            print(f"Error in reading images for pair {idx}.")
+            continue
+
+        result_text = {0: "Forged", 1: "Original"}
+
+        print(f"Pair {idx}:")
+        print(f"Signature 1 ({path1}): {result_text[result1]}")  # Original signature
+        print(f"Signature 2 ({path2}): {result_text[result2]}")  # Forged signature
+        print()
+
+# Compare the specific pairs
+compare_signature_pairs()
